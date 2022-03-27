@@ -25,7 +25,7 @@ impl World {
     pub fn draw(&mut self, icons: &Icons) {
         self.court.draw_grid(
             |x, y, glyph| { 
-                draw_icon(x as f32 * 32.0, y as f32 * 32.0, icons.pick(glyph)) 
+                draw_icon(x as f32 * 48.0, y as f32 * 48.0, icons.pick(glyph)) 
             }
         )
     }
@@ -51,8 +51,8 @@ impl World {
 
 fn draw_icon(x: f32, y: f32, icon: Texture2D) {
     let mut params = DrawTextureParams::default();
-    draw_rectangle_lines(x, y, 32.0, 32.0, 1.0, BLACK);
-    draw_rectangle_lines(x + 1.0, y + 1.0, 30.0, 30.0, 1.0, WHITE);
-    params.dest_size = Some(vec2(28.0, 28.0));
+    draw_rectangle_lines(x, y, 48.0, 48.0, 1.0, BLACK);
+    draw_rectangle_lines(x + 1.0, y + 1.0, 46.0, 46.0, 1.0, WHITE);
+    params.dest_size = Some(vec2(44.0, 44.0));
     draw_texture_ex(icon, x + 2.0, y + 2.0, WHITE, params);
 }

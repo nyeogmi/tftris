@@ -13,8 +13,8 @@ fn window_conf() -> Conf {
         window_title: "TFTRIS".to_owned(),
         fullscreen: false,
         window_resizable: false,
-        window_width: (WIDTH * 32) as i32,
-        window_height: (HEIGHT * 32) as i32,
+        window_width: (WIDTH * 48) as i32,
+        window_height: (HEIGHT * 48) as i32,
         high_dpi: true,
         ..Default::default()
     }
