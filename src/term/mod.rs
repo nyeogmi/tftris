@@ -5,7 +5,7 @@ mod glyph;
 mod group;
 mod term;
 
-pub use atom::Atom;
+pub use atom::*;
 pub use generator::TermGenerator;
 pub use glyph::Glyph;
 pub use group::Group;

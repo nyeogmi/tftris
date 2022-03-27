@@ -22,7 +22,7 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let icons = icons::load();
+    let icons = icons::Icons::load();
     let mut world = world::World::new(WIDTH as usize, HEIGHT as usize);
 
     loop {
