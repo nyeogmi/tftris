@@ -19,10 +19,10 @@ impl TermGenerator {
 fn term() -> Term {
     [
         potion, potion, potion,
-        meat, meat,
-        meat, meat,
+        meat, 
         critter, critter,
-        tftrigger, tftrigger,
+        critter, critter,
+        tftrigger,
         empty_group_2,
         empty_group_3,
     ].choose(&mut thread_rng()).unwrap()()
