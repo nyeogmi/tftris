@@ -1,6 +1,6 @@
 use macroquad::{prelude::Texture2D};
 
-use crate::court::Glyph;
+use crate::term::Glyph;
 
 pub struct Icons {
     pub lparen: Texture2D,
@@ -29,12 +29,13 @@ pub fn load() -> Icons {
 }
 impl Icons {
     pub(crate) fn pick(&self, glyph: &Glyph) -> Texture2D {
+        use crate::term::Atom::*;
         match glyph {
             Glyph::Single(atom) => match atom {
-                crate::court::Atom::K => self.bat_potion,
-                crate::court::Atom::S => self.feather,
-                crate::court::Atom::I => self.raptor,
-                crate::court::Atom::Y => self.bat,
+                K => self.bat_potion,
+                S => self.feather,
+                I => self.raptor,
+                Y => self.bat,
             }
             Glyph::LParen => self.lparen,
             Glyph::RParen => self.rparen,

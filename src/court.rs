@@ -1,3 +1,5 @@
+use crate::term::{Group, Term, Glyph};
+
 pub(crate) struct Court {
     pub(crate) width: usize,
     pub(crate) rows: Vec<Row>,
@@ -17,150 +19,10 @@ pub(crate) struct Row {
     glyphs: Vec<Glyph>
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub(crate) enum Term {
-    Single(Atom),
-    Group(Group),
-}
-
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub(crate) struct Group(Vec<Option<Term>>);
-
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub(crate) enum Glyph {
-    Single(Atom), LParen, RParen, Unknown,
-}
-
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub(crate) enum Atom {
-    K, S, I, Y
-}
-
-impl Group {
-    pub(crate) fn empty(len: usize) -> Group {
-        Group(vec![None; len])
-    }
-
-    fn push(&mut self, t: Term) {
-        if self.try_accept(t.clone()) { return }
-        self.0.push(Some(t))
-    }
-
-    fn trim(&mut self) {
-        while self.0.last() == Some(&None) {
-            self.0.pop();
-        }
-    }
-
-    fn try_accept(&mut self, t: Term) -> bool {
-        if self.0.len() == 0 {
-            return false
-        }
-        let ix = self.0.len() - 1;
-        match &mut self.0[ix] {
-            None => { self.0[ix] = Some(t); return true }
-            Some(Term::Single(_)) => { return false }
-            Some(Term::Group(x)) => { x.try_accept(t) } 
-        }
-    }
-
-    fn reduce(&mut self) -> bool {
-        if self.settle() { return true }
-        self.apply()
-    }
-
-    fn settle(&mut self) -> bool {
-        for i in 0..self.0.len() {
-            match &mut self.0[i] {
-                Some(Term::Single(_)) => {}
-                Some(Term::Group(g)) => {
-                    if g.settle() { return true }
-                }
-                None => {}
-            }
-
-            if i + 1 < self.0.len() {
-                let slice = &mut self.0[i..i+2];
-                let (t1, t2 ) = slice.split_at_mut(1);
-
-                match &mut t1[0] {
-                    Some(Term::Group(g)) => {
-                        if let [Some(x)] = t2 {
-                            if g.try_accept(x.clone()) {
-                                t2[0] = None;
-                                return true
-                            }
-                        }
-                    }
-                    Some(Term::Single(_)) => {}
-                    None => {
-                        if t2[0].is_some() {
-                            t1[0] = t2[0].take();
-                            return true
-                        }
-                    }
-                }
-            }
-        }
-        return false
-    }
-
-    fn apply(&mut self) -> bool {
-        match self.0.pop() {
-            None => { return false}
-            Some(None) => { self.0.push(None); return false }
-            Some(Some(Term::Group(g))) => {
-                if g.0.iter().any(|x| x.is_none()) { 
-                    self.0.push(Some(Term::Group(g)));
-                    return false; 
-                }
-                self.0.extend(g.0);
-                return true
-            }
-            Some(Some(Term::Single(s))) => {
-                if s.apply(&mut self.0) {
-                    return true
-                } else {
-                    self.0.push(Some(Term::Single(s)));
-                    return false
-                }
-            }
-        }
-    }
-}
-
-impl Group {
-    fn to_glyphs(&self) -> Vec<Glyph> {
-        let mut result = Vec::new();
-        for t in &self.0 {
-            match t {
-                Some(t) => { result.append(&mut t.to_glyphs()) }
-                None => { result.push(Glyph::Unknown) }
-            }
-        }
-        result
-    }
-}
-
-impl Term {
-    fn to_glyphs(&self) -> Vec<Glyph> {
-        match self {
-            Term::Single(s) => { vec![Glyph::Single(s.clone())] }
-            Term::Group(g) => { 
-                let mut result = vec![];
-                result.push(Glyph::RParen);
-                result.append(&mut g.to_glyphs());
-                result.push(Glyph::LParen);
-                result
-            }
-        }
-    }
-}
-
 impl Row {
     fn new() -> Row {
         Row {
-            stack: Group(Vec::new()),
+            stack: Group::new(vec![]),
             glyphs: Vec::new()
         }
     }
@@ -279,64 +141,5 @@ impl Court {
                 }
             }
         }
-    }
-}
-
-impl Atom {
-    pub(crate) fn apply(&self, terms: &mut Vec<Option<Term>>) -> bool {
-        fn take(terms: &mut Vec<Option<Term>>, i: usize) -> Option<Vec<Term>> {
-            if terms.len() < i { return None }
-            for i in terms[terms.len() - i..].iter() {
-                if i.is_none() { return None }
-            }
-            let mut t2 = vec![];
-            for i in terms.drain(terms.len() - i..) {
-                t2.push(i.unwrap())
-            }
-            Some(t2)
-        }
-
-        match self {
-            Atom::K => {
-                if let Some(xy) = take(terms, 2) {
-                    let x = xy[0].clone();
-                    let _ = xy[1].clone();
-                    terms.push(Some(x));
-                    return true;
-                }
-            }
-            Atom::S => {
-                if let Some(xyz) = take(terms, 3) {
-                    let x = xyz[0].clone();
-                    let y = xyz[1].clone();
-                    let z = xyz[2].clone();
-                    terms.push(Some(Term::Group(Group(vec![Some(y), Some(z.clone())]))));
-                    terms.push(Some(z));
-                    terms.push(Some(x));
-                    return true;
-                }
-            }
-            Atom::Y => {
-                if let Some(x) = take(terms, 1) {
-                    let x = x[0].clone();
-                    terms.push(Some(Term::Group(Group(vec![
-                        Some(x.clone()),
-                        Some(Term::Single(Atom::Y)), 
-                    ]))));
-                    terms.push(Some(x));
-                    return true;
-                }
-            }
-            Atom::I => {
-                if let Some(x) = take(terms, 1) {
-                    let x = x[0].clone();
-                    terms.push(Some(x));
-                    return true;
-                }
-            }
-        }
-
-        return false
-        // todo!()
     }
 }

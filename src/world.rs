@@ -1,7 +1,6 @@
-use crate::{icons::Icons, court::Group};
-
-use super::court::{Atom, Court, Term};
-use ::rand::prelude::*;
+use super::court::Court;
+use crate::icons::Icons;
+use super::term::TermGenerator;
 use macroquad::prelude::*;
 
 pub(crate) struct World {
@@ -43,37 +42,12 @@ impl World {
 
         if self.update_cooldown == 0 {
             self.court.update(|| self.termgen.generate_term());
-            self.update_cooldown = 90
+            self.update_cooldown = 25;
         } 
         self.update_cooldown -= 1;
     }
 }
 
-struct TermGenerator { }
-
-impl TermGenerator {
-    pub fn new() -> Self {
-        TermGenerator {
-        }
-    }
-
-    pub fn generate_term(&self) -> Term {
-        // return a random term
-        let single: fn() -> Term = || Term::Single([
-            || Atom::K, 
-            || Atom::S, 
-            || Atom::I, 
-            || Atom::Y
-        ].choose(&mut thread_rng()).unwrap()());
-        [
-            single, single, single,
-            single, single, single,
-            single, single, single,
-            || Term::Group(Group::empty(2)),
-            || Term::Group(Group::empty(3)),
-        ].choose(&mut thread_rng()).unwrap()()
-    }
-}
 
 fn draw_icon(x: f32, y: f32, icon: Texture2D) {
     let mut params = DrawTextureParams::default();

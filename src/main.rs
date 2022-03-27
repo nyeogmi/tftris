@@ -1,6 +1,7 @@
 mod court;
-mod world;
 mod icons;
+mod term;
+mod world;
 
 use macroquad::prelude::*;
 
