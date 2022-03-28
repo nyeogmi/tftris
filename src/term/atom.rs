@@ -30,3 +30,18 @@ impl Rank {
         }
     }
 }
+impl Atom {
+    pub(crate) fn weight(&self) -> usize {
+        match self {
+            // potions are very light
+            Atom::Potion(_) => 1,  
+
+            // things that go on top of critters
+            Atom::Meat => 2,
+            Atom::TFTrigger(_) => 2,
+
+            // heavy things
+            Atom::Critter(_, _) => 3,  
+        }
+    }
+}

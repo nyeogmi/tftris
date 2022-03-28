@@ -16,14 +16,14 @@ impl Group {
             n_nones: 0,
             terms,
         }; 
-        g.recalculate_settled();
         g.recalculate_n_nones();
         return g
     }
 
     pub fn push(&mut self, t: Term) {
         if self.try_accept(t.clone()) { return }
-        self.terms.push(Some(t))
+        self.terms.push(Some(t));
+        self.settled = false;
     }
 
     fn try_accept(&mut self, t: Term) -> bool {
@@ -54,31 +54,8 @@ impl Group {
         self.apply()
     }
 
-    fn recalculate_settled(&mut self) {
-        self.settled = self._calculate_settled()
-    }
-
     fn recalculate_n_nones(&mut self) {
         self.n_nones = self._calculate_n_nones()
-    }
-
-    fn _calculate_settled(&self) -> bool {
-        let mut saw_none = false;
-        for t in self.terms.iter() {
-            match t {
-                None => { saw_none = true }
-                Some(t) => { 
-                    if saw_none { return false }
-                    match t {
-                        Term::Single(_) => {}
-                        Term::Group(g) => {
-                            if !g.settled { return false }
-                        }
-                    }
-                }
-            }
-        }
-        return true
     }
 
     fn _calculate_n_nones(&self) -> usize {
@@ -104,29 +81,52 @@ impl Group {
 
             if i + 1 < self.terms.len() {
                 let slice = &mut self.terms[i..i+2];
-                let (t1, t2 ) = slice.split_at_mut(1);
 
-                match &mut t1[0] {
-                    Some(Term::Group(g)) => {
-                        if let [Some(x)] = t2 {
-                            if g.try_accept(x.clone()) {
-                                t2[0] = None;
-                                self.n_nones += 1;
-                                return true
+                let n_nones_prior = slice[0].is_none() as usize + slice[1].is_none() as usize;
+
+                let tx = slice[1].take();
+                let ty = slice[0].take();
+
+                let (changed, tx_new, ty_new) = match (tx, ty) {
+                    (Some(x), None) => {
+                        (true, None, Some(x))
+                    }
+                    (Some(x), Some(Term::Group(mut y))) => {
+                        if y.try_accept(x.clone()) {
+                            (true, None, Some(Term::Group(y)))
+                        } else {
+                            let y = Term::Group(y);
+                            if x.weight().is_some() && y.weight().is_some() && x.weight() > y.weight() {
+                                (true, Some(y), Some(x))
+                            } else {
+                                (false, Some(x), Some(y))
                             }
                         }
                     }
-                    Some(Term::Single(_)) => {}
-                    None => {
-                        if t2[0].is_some() {
-                            t1[0] = t2[0].take();
-                            return true
+                    (Some(x), Some(y)) => {
+                        if x.weight().is_some() && y.weight().is_some() && x.weight() > y.weight() {
+                            (true, Some(y), Some(x))
+                        } else {
+                            (false, Some(x), Some(y))
                         }
                     }
+                    (None, y) => { (false, None, y) }
+                };
+
+                slice[1] = tx_new;
+                slice[0] = ty_new;
+
+                let n_nones_post = slice[0].is_none() as usize + slice[1].is_none() as usize;
+                self.n_nones += n_nones_post;
+                self.n_nones -= n_nones_prior;
+
+                if changed {
+                    return true;
                 }
             }
         }
-        return false
+
+        return false;
     }
 
     fn apply(&mut self) -> bool {
