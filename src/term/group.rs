@@ -135,8 +135,9 @@ impl Group {
             Some(None) => { self.terms.push(None); return false }
             Some(Some(Term::Group(g))) => {
                 if g.n_nones != 0 {
+                    let result = self.apply();
                     self.terms.push(Some(Term::Group(g)));
-                    return false; 
+                    return result; 
                 }
                 self.terms.extend(g.terms);
                 return true
@@ -146,8 +147,9 @@ impl Group {
                     self._calculate_n_nones();
                     return true
                 } else {
+                    let result = self.apply();
                     self.terms.push(Some(Term::Single(s)));
-                    return false
+                    return result
                 }
             }
         }
