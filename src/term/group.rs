@@ -130,12 +130,16 @@ impl Group {
     }
 
     fn apply(&mut self) -> bool {
+        self._apply(true)
+    }
+
+    fn _apply(&mut self, top: bool) -> bool {
         match self.terms.pop() {
             None => { return false }
             Some(None) => { self.terms.push(None); return false }
             Some(Some(Term::Group(g))) => {
-                if g.n_nones != 0 {
-                    let result = self.apply();
+                if g.n_nones != 0 || !top {
+                    let result = self._apply(false);
                     self.terms.push(Some(Term::Group(g)));
                     return result; 
                 }
@@ -147,7 +151,7 @@ impl Group {
                     self._calculate_n_nones();
                     return true
                 } else {
-                    let result = self.apply();
+                    let result = self._apply(false);
                     self.terms.push(Some(Term::Single(s)));
                     return result
                 }
